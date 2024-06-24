@@ -5,7 +5,7 @@ class Recording(Base):
     __tablename__ = 'recordings'
     id:int = Column(Integer, primary_key=True)
     project:str = Column(String(120), unique=False)
-    name:str = Column(String(120), unique=True)
+    name:str = Column(String(120), unique=False)
     path:str = Column(String(120), unique=True)
     upload:bool = Column(Boolean, unique=False, default=False)
     uploaded:bool = Column(Boolean, unique=False, default=False)

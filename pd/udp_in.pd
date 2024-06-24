@@ -1,0 +1,25 @@
+#N canvas 0 50 834 595 12;
+#X obj 153 74 netreceive -u -f 4446;
+#X obj 153 214 outlet;
+#X obj 294 184 / 100;
+#X obj 294 215 outlet;
+#X obj 372 183 / 100;
+#X obj 372 214 outlet;
+#X obj 450 182 / 100;
+#X obj 450 213 outlet;
+#X obj 527 214 outlet;
+#X obj 605 215 outlet;
+#X obj 153 122 route loopFile recordFile loopLevel inputLevel1 inputLevel2
+command tempo, f 77;
+#X obj 221 214 outlet;
+#X connect 0 0 10 0;
+#X connect 2 0 3 0;
+#X connect 4 0 5 0;
+#X connect 6 0 7 0;
+#X connect 10 0 1 0;
+#X connect 10 1 11 0;
+#X connect 10 2 2 0;
+#X connect 10 3 4 0;
+#X connect 10 4 6 0;
+#X connect 10 5 8 0;
+#X connect 10 6 9 0;

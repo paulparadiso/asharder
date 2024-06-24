@@ -24,6 +24,14 @@ const reducer = (state, action) => {
             return {...state,
                     nextProcess: {process: 'playAudioFile', data: {path: action.payload.path}}
             }
+        case 'UPDATE_FILES':
+            return {...state,
+                    nextProcess: {process: 'updateFiles', data: action.payload.data}
+                }
+        case 'SEND_LOOPER_COMMAND':
+            return {...state,
+                    nextProcess: {process: 'sendLooperCommand', data: action.payload.command}
+            }
         default:
             return state;
     }
@@ -82,6 +90,30 @@ const AudioParameterProvider = ({children}) => {
         
     }
 
+    const updateFiles = data => {
+        axios.post('http://localhost:5000/updatefiles',
+                    JSON.stringify({fileData: data}),
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(res => {
+                        console.log(res);
+                    })       
+    }
+
+    const sendLooperCommand = data => {
+        axios.post('http://localhost:5000/command',
+                    JSON.stringify({command: data}),
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(res => {
+                        console.log(res);
+                    })
+    }
+
     useEffect(() => {
         if(state.nextProcess !== null) {
             if(state.nextProcess.process === 'setLevel') {
@@ -92,6 +124,12 @@ const AudioParameterProvider = ({children}) => {
             }
             if(state.nextProcess.process === 'playAudioFile') {
                 playAudioFile(state.nextProcess.data['path']);
+            }
+            if(state.nextProcess.process === 'updateFiles') {
+                updateFiles(state.nextProcess.data);
+            }
+            if(state.nextProcess.process === 'sendLooperCommand') {
+                sendLooperCommand(state.nextProcess.data);
             }
         }
     }, [state.nextProcess]);

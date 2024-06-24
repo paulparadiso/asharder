@@ -26,11 +26,6 @@ const ProjectControls = props => {
 
     return (
         <Grid item lg={12}>
-            <div style={{
-                marginTop: '1vh',
-                position: 'relative',
-                height: '20vh',
-            }}>
                 <TextField
                     id="project-name"
                     label="Project Name"
@@ -40,7 +35,6 @@ const ProjectControls = props => {
                 <Button variant="outlined" onClick={setProjectName}>
                     set
                 </Button>
-            </div>
         </Grid>
     )
 

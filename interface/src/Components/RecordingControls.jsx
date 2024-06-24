@@ -20,7 +20,6 @@ const RecordingControls = props => {
 
     const sliderStyles = {
         height: '50vh',
-        float: 'left',
         marginRight: '1.3vw'
     }
 
