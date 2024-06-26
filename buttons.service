@@ -1,0 +1,12 @@
+[Unit]
+Description=Audio interface service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=patch
+ExecStart=/bin/bash /home/patch/dev/asharder/start_server.sh
+
+[Install]
+WantedBy=multi-user.target
