@@ -1,18 +1,31 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
 import { AudioParameterContext } from '../Contexts/AudioParameterProvider';
 
 const AudioControls = props => {
 
     const [state, dispatch] = useContext(AudioParameterContext);
+    const [recordTime, setRecordTime] = useState('');
 
     const sendCommand = command => {
         dispatch({
             type: 'SEND_LOOPER_COMMAND',
             payload: {'command': command}
         })
+    }
+
+    const recordTimeUpdated = e => {
+        setRecordTime(e.target.value);
+    }
+    
+    const sendRecordTime = () => {
+        dispatch({
+            type: 'SEND_RECORD_TIME',
+            payload: {value: recordTime}
+        });
     }
 
     const styles = {
@@ -28,7 +41,7 @@ const AudioControls = props => {
                 </Button>
                 <Button variant="outlined" sx={styles}
                         onClick={() => sendCommand('playLoop')}>
-                    Play
+                    Play/Stop
                 </Button>
                 <Button variant="outlined" sx={styles}
                         onClick={() => sendCommand('record')}>
@@ -39,12 +52,24 @@ const AudioControls = props => {
                     Erase
                 </Button>
                 <Button variant="outlined" sx={styles}
+                        onClick={() => sendCommand('save')}>
+                    Save
+                </Button>
+                <Button variant="outlined" sx={styles}
                         onClick={() => sendCommand('send')}>
                     Send
                 </Button>
+            </Paper>
+            <Paper>
+                <TextField 
+                    id="recordtime" 
+                    label="Record Time" 
+                    variant="outlined" 
+                    onChange={recordTimeUpdated}
+                /> 
                 <Button variant="outlined" sx={styles}
-                        onClick={() => sendCommand('save')}>
-                    Save
+                    onClick={() => sendRecordTime()}>
+                    Set 
                 </Button>
             </Paper>
         </Grid>

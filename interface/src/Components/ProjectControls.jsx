@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -9,7 +9,7 @@ import { ClassNames } from '@emotion/react';
 const ProjectControls = props => {
 
     const [state, dispatch] = useContext(AudioParameterContext);
-    const [name, setName] = useState('');
+    const [name, setName] = useState('UNSORTED');
 
     const textFieldUpdated = e => {
         setName(e.target.value)
@@ -23,13 +23,17 @@ const ProjectControls = props => {
             }
         })
     }
+    
+    useEffect(() => {
+        setProjectName();
+    }, [])
 
     return (
         <Grid item lg={12}>
                 <TextField
                     id="project-name"
                     label="Project Name"
-                    defaultValue=""
+                    defaultValue="UNSORTED"
                     onChange={textFieldUpdated}
                 />
                 <Button variant="outlined" onClick={setProjectName}>

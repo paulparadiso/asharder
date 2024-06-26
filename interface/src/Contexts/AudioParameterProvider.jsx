@@ -32,6 +32,10 @@ const reducer = (state, action) => {
             return {...state,
                     nextProcess: {process: 'sendLooperCommand', data: action.payload.command}
             }
+        case 'SEND_RECORD_TIME':
+            return {...state,
+                    nextProcess: {process: 'sendRecordTime', data: action.payload.value}
+            }
         default:
             return state;
     }
@@ -114,6 +118,18 @@ const AudioParameterProvider = ({children}) => {
                     })
     }
 
+    const sendRecordTime = data => {
+        axios.post('http://localhost:5000/setparam',
+            JSON.stringify({param: 'recordTime', value: data}),
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+                }).then(res => {
+                    console.log(res);
+                });
+            }
+
     useEffect(() => {
         if(state.nextProcess !== null) {
             if(state.nextProcess.process === 'setLevel') {
@@ -130,6 +146,9 @@ const AudioParameterProvider = ({children}) => {
             }
             if(state.nextProcess.process === 'sendLooperCommand') {
                 sendLooperCommand(state.nextProcess.data);
+            }
+            if(state.nextProcess.process === 'sendRecordTime') {
+                sendRecordTime(state.nextProcess.data);
             }
         }
     }, [state.nextProcess]);

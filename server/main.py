@@ -4,12 +4,17 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
+from flask import render_template
+from flask import send_from_directory
 from database import db_session
 from models import Recording
 from playsound import playsound
 import shutil
+import os
 
-app = Flask(__name__)
+template_dir = os.path.abspath('../interface/dist')
+
+app = Flask(__name__, template_folder=template_dir, static_url_path='')
 CORS(app)
 
 randomizer = None
@@ -30,6 +35,8 @@ def set_parameter():
 	print(data)
 	if(data['param'] == 'projectName'):
 		randomizer.set_project_name(data['value'])
+	if(data['param'] == 'recordTime'):
+		randomizer.set_record_time(data['value'])
 	randomizer.send(f'{data["param"]} {data["value"]};\n')
 	return "Thanks"
 
@@ -90,6 +97,14 @@ def update_files():
 		if "addLoop" in data['fileData'][key]:
 			add_file_to_loops(key)
 	return "Updated"
+
+@app.route('/', methods=['GET'])
+def index():
+	return render_template('index.html')
+
+@app.route('/assests/<path:path>', methods=['GET'])
+def assets():
+	return send_from_directory('../interface/dist/assets', path)
 
 def on_message(msg):
 	global comms

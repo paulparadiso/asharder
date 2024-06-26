@@ -10,6 +10,8 @@ from models import Recording
 from datetime import datetime
 import s3manager
 
+DEFAULT_PROJECT_NAME = 'UNSORTED'
+
 class Randomizer:
 
 	def __init__(self, directory, r_port, s_port, db_session=None):
@@ -20,10 +22,12 @@ class Randomizer:
 		self.send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.receive_socket.bind(('localhost', self.receive_port))
 		self.current_track = 0
-		self.project_name = None
+		self.project_name = DEFAULT_PROJECT_NAME
 		self.recording_track_path = None
+		self.last_command = None
 		self.play_mode = 'loop'
 		self.button = None
+		self.current_shuffle_file = None
 		self.led = LED()
 		self.led_thread = threading.Thread(target=self.toggle_led, daemon=True)
 		self.led_toggling = False
@@ -68,9 +72,8 @@ class Randomizer:
 			self.led.on()
 		elif msg == 'led_off;':
 			self.led.off()
-		elif msg == 'recording_end;':
-			pass
-
+		elif msg == 'recording_done;':
+			self.save_file_data()
 
 	def get_tempo(self, file):
 		r = 0
@@ -80,18 +83,21 @@ class Randomizer:
 			pass
 		return r
 
-
 	def get_next_file(self):
 		path = Path(self.directory)
 		files = list(path.iterdir())
 		if len(files) < 1:
 			return
-		next_file = str(files[self.current_track])
-		tempo = self.get_tempo(next_file)
-		self.send(f'loopFile {next_file};\n')
-		self.send(f'tempo {str(tempo)};\n')
+		self.current_shuffle_file = str(files[self.current_track])
+		#tempo = self.get_tempo(next_file)
+		self.send(f'loopFile {self.current_shuffle_file};\n')
+		#self.send(f'tempo {str(tempo)};\n')
 		self.current_track = (self.current_track + 1) % len(files)
-		self.last_command = 'randomLoop'
+		self.last_command = 'shuffle:play'
+		
+	def send_last_file(self):
+		if self.current_shuffle_file != None:
+			self.send(f'loopFile {self.current_shuffle_file};\n')
 
 	def get_random_file(self):
 		path = Path(self.directory)
@@ -105,41 +111,88 @@ class Randomizer:
 
 	def set_project_name(self, n):
 		print('Setting project name to {n}')
-		self.current_project_name = n
+		self.project_name = n
+
+	def set_record_time(self, t):
+		self.record_time = int(t)
+		self.send(f'recordTime {self.record_time};\n')
 
 	def save_file_data(self):
+		print('Saving file data.')
 		file_name = self.recording_track_path.split('/')[-1]
-		r = Recording(self.current_project_name, file_name, self.recording_track_path)
+		r = Recording(self.project_name, file_name, self.recording_track_path)
 		db_session.add(r)
 		db_session.commit()
 
 	def start_recording(self):
-		recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
-		self.recording_track_path = f'/home/pi/recordings/{recording_file}'
-		print(self.recording_track_path)
-		self.send(f'recordFile {self.recording_track_path};\n')
+		if self.last_command != 'record:start':
+			recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
+			self.recording_track_path = f'/home/pi/recordings/{recording_file}'
+			print(self.recording_track_path)
+			self.send('command stopLoop;\n')
+			self.send(f'recordFile {self.recording_track_path};\n')
+			self.last_command = 'record:start'
+		else:
+			self.send(f'command stopRecording;\n')
+			self.save_file_data()
+			self.last_command = 'record:stop'
 
 	def play_or_stop_file(self):
-		pass
+		if self.last_command == None:
+			return
+		elif self.last_command == 'shuffle:play':
+			self.send('command stopLoop;\n')
+			self.last_command = 'shuffle:stop'
+		elif self.last_command == 'shuffle:stop':
+			self.send_last_file()
+			self.last_command = 'shuffle:play'
+		elif self.last_command == 'record:stop' or self.last_command == 'play:stop':
+			self.play_last_recording()
+			self.last_command = 'play:start'
+		elif self.last_command == 'play:start':
+			self.send('command stopLoop;\n')
+			self.last_command = 'play:stop'
+		elif self.last_command == 'record:start':
+			self.send(f'command stopRecording;\n')
+			self.last_command = 'record:stop'
+			self.play_or_stop_file()
 
 	def save_current_file(self):
 		if self.recording_track_path != None:
-			self.save_file_data()
-
-	def send_current_file(self):
-		if self.recording_track_path != None:
+			#self.save_file_data()
 			r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
 			r.upload = True
 			db_session.commit()
-			s3manager.upload_files()
+
+	#def save_file_data(self):
+	#	r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
+	#	r.upload = True
+	#	db_session.commit()
+
+	def send_current_file(self):
+		if self.recording_track_path == None:
+			return
+		if db_session.query(Recording).filter(Recording.path == self.recording_track_path).first() is None:
+			self.save_file_data()
+		r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
+		r.upload = True
+		db_session.commit()
+		s3manager.upload_files()
 
 	def erase_current_file(self):
 		if(self.recording_track_path == None):
 			return
+		db_session.query(Recording).filter(Recording.path == self.recording_track_path).delete()
+		db_session.commit()
 		file = pathlib.Path(self.recording_track_path)
 		if(file.is_file()):
 			file.unlink()
 		self.recording_track_path = None
+		
+	def play_last_recording(self):
+		if(self.recording_track_path == None):
+			return
+		self.send(f'loopFile {self.recording_track_path};\n')
 
 	def pin_cb(self, button_pressed):
 		#self.send(f'command {pin};\n')
