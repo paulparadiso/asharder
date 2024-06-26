@@ -102,8 +102,8 @@ def update_files():
 def index():
 	return render_template('index.html')
 
-@app.route('/assests/<path:path>', methods=['GET'])
-def assets():
+@app.route('/assets/<path:path>', methods=['GET'])
+def assets(path):
 	return send_from_directory('../interface/dist/assets', path)
 
 def on_message(msg):
