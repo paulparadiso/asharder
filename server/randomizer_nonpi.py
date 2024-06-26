@@ -3,12 +3,11 @@ import threading
 import pathlib
 import random
 from pathlib import Path
-from GPIO import LED, Button
+from GPIO_nonpi import LED, Button
 import time
 from database import db_session
 from models import Recording
 from datetime import datetime
-import s3manager
 
 class Randomizer:
 
@@ -22,8 +21,8 @@ class Randomizer:
 		self.current_track = 0
 		self.project_name = None
 		self.recording_track_path = None
-		self.play_mode = 'loop'
-		self.button = None
+		#self.button = None
+		self.button = Button(self.pin_cb)
 		self.led = LED()
 		self.led_thread = threading.Thread(target=self.toggle_led, daemon=True)
 		self.led_toggling = False
@@ -44,6 +43,9 @@ class Randomizer:
 				time.sleep(0.5)
 			else:
 				time.sleep(0.2)
+
+	def set_pin_status(self, p, status):
+		self.button.set_pin_status(p, status)
 
 	def parse_message(self, msg):
 		print(msg)
@@ -68,7 +70,7 @@ class Randomizer:
 			self.led.on()
 		elif msg == 'led_off;':
 			self.led.off()
-		elif msg == 'recording_end;':
+		elif msg == 'recording_done;':
 			pass
 
 
@@ -84,8 +86,6 @@ class Randomizer:
 	def get_next_file(self):
 		path = Path(self.directory)
 		files = list(path.iterdir())
-		if len(files) < 1:
-			return
 		next_file = str(files[self.current_track])
 		tempo = self.get_tempo(next_file)
 		self.send(f'loopFile {next_file};\n')
@@ -115,31 +115,20 @@ class Randomizer:
 
 	def start_recording(self):
 		recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
-		self.recording_track_path = f'/home/pi/recordings/{recording_file}'
-		print(self.recording_track_path)
-		self.send(f'recordFile {self.recording_track_path};\n')
+		print(recording_file)
+		self.send(f'recordFile /home/patch/recordings/{recording_file};\n')
 
 	def play_or_stop_file(self):
 		pass
 
 	def save_current_file(self):
-		if self.recording_track_path != None:
-			self.save_file_data()
+		pass
 
 	def send_current_file(self):
-		if self.recording_track_path != None:
-			r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
-			r.upload = True
-			db_session.commit()
-			s3manager.upload_files()
+		pass
 
 	def erase_current_file(self):
-		if(self.recording_track_path == None):
-			return
-		file = pathlib.Path(self.recording_track_path)
-		if(file.is_file()):
-			file.unlink()
-		self.recording_track_path = None
+		pass
 
 	def pin_cb(self, button_pressed):
 		#self.send(f'command {pin};\n')
@@ -169,23 +158,6 @@ class Randomizer:
 		elif(button_pressed == 'random'):
 			self.get_next_file()
 
-	def shuffle_pressed(self):
-		self.get_next_file()
-
-	def play_pressed(self):
-		self.play_or_stop_file()
-
-	def record_pressed(self):
-		self.start_recording()
-
-	def save_pressed(self):
-		self.save_current_file()
-
-	def send_pressed(self):
-		self.send_current_file()
-
-	def erase_pressed(self):
-		self.erase_current_file()
 
 	def run(self):
 		while 1:
@@ -194,7 +166,6 @@ class Randomizer:
 			self.parse_message(data.decode().strip())
 
 	def start(self):
-		self.button = Button(self.pin_cb)
 		self.button.start_polling()
 		t1 = threading.Thread(target=self.run)
 		t1.start()

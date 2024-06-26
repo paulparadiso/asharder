@@ -52,7 +52,7 @@ const AudioParameterProvider = ({children}) => {
     const [state, dispatch] = useReducer(reducer, initialState);
 
     const setLevel = (target, value) => {
-        axios.post('http://192.168.2.99:5000/setparam', 
+        axios.post('http://localhost:5000/setparam', 
                    JSON.stringify({param: target, value: value}),
                    {
                         headers: {

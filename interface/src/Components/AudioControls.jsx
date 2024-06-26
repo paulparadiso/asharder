@@ -24,15 +24,27 @@ const AudioControls = props => {
             <Paper>
                 <Button variant="outlined" sx={styles} 
                         onClick={() => sendCommand('randomLoop')}>
-                    Random Loop
+                    Shuffle
                 </Button>
                 <Button variant="outlined" sx={styles}
                         onClick={() => sendCommand('playLoop')}>
-                    Play Loop
+                    Play
                 </Button>
                 <Button variant="outlined" sx={styles}
                         onClick={() => sendCommand('record')}>
                     Record
+                </Button>
+                <Button variant="outlined" sx={styles} 
+                        onClick={() => sendCommand('erase')}>
+                    Erase
+                </Button>
+                <Button variant="outlined" sx={styles}
+                        onClick={() => sendCommand('send')}>
+                    Send
+                </Button>
+                <Button variant="outlined" sx={styles}
+                        onClick={() => sendCommand('save')}>
+                    Save
                 </Button>
             </Paper>
         </Grid>
