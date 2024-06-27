@@ -1,2 +1,2 @@
-cd /home/pp/projects/asharder/server
+cd /home/patch/dev/asharder/server
 python main.py

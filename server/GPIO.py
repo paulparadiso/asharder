@@ -29,12 +29,19 @@ class Button:
         self.random_loop_pin = 4
         self.pin_list = [self.record_pin, self.play_loop_pin, self.save_pin, self.send_pin, self.erase_pin, self.random_loop_pin]
         self.pin_status = {}
+        self.pin_fired = {}
         self.pin_status[self.record_pin] = 0
+        self.pin_fired[self.record_pin] = False
         self.pin_status[self.play_loop_pin] = 0
+        self.pin_fired[self.play_loop_pin] = False
         self.pin_status[self.save_pin] = 0
+        self.pin_fired[self.save_pin] = False
         self.pin_status[self.send_pin] = 0
+        self.pin_fired[self.send_pin] = False
         self.pin_status[self.erase_pin] = 0
+        self.pin_fired[self.erase_pin] = False
         self.pin_status[self.random_loop_pin] = 0
+        self.pin_fired[self.random_loop_pin] = False
         self.pin_names = {
             self.record_pin: 'record',
             self.play_loop_pin: 'play',
@@ -56,10 +63,14 @@ class Button:
         while True:
             for pin in self.pin_list:
                 v = GPIO.input(pin)
-                if v != self.pin_status[pin]:
-                    self.pin_status[pin] = v
-                    if v == 1:
-                        self.pin_cb(self.pin_names[pin])
+                if v == 0:
+                    self.pin_status[pin] = 0
+                    self.pin_fired[pin] = False
+                else:
+                    self.pin_status[pin] = self.pin_status + 1
+                if (self.pin_status[pin] > 2) and (self.pin_fired[pin] == False):
+                    self.pin_cb(self.pin_names[pin])
+                    self.pin_fired[pin] = True
             time.sleep(0.1)
 
 

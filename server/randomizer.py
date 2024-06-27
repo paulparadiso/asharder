@@ -127,7 +127,7 @@ class Randomizer:
 	def start_recording(self):
 		if self.last_command != 'record:start':
 			recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
-			self.recording_track_path = f'/home/pi/recordings/{recording_file}'
+			self.recording_track_path = f'/home/patch/recordings/{recording_file}'
 			print(self.recording_track_path)
 			self.send('command stopLoop;\n')
 			self.send(f'recordFile {self.recording_track_path};\n')

@@ -1,0 +1,20 @@
+from database import db_session
+from models import Recording
+import pathlib
+
+def run():
+	recordings = Recording.query.all()
+	for r in recordings:
+		print(r)
+		if not r.upload:
+			#db_session.delete(r)
+			file = pathlib.Path(r.path)
+			if(file.is_file()):
+				print(f'Deleting {file}')
+				file.unlink()
+			r.delete()
+			r.execute()
+	#db_session.commit()
+	
+if __name__ == '__main__':
+	run()
