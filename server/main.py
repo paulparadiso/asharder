@@ -114,7 +114,7 @@ def on_message(msg):
 
 def main():
 	global randomizer
-	randomizer = Randomizer('/home/pi/loops', 4445, 4446, db_session)
+	randomizer = Randomizer('/home/patch/loops', 4445, 4446, db_session)
 	randomizer.start()
 	app.run(host='0.0.0.0')
 	
