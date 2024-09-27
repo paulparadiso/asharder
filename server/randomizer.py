@@ -4,6 +4,7 @@ import pathlib
 import random
 from pathlib import Path
 from GPIO import LED, Button
+from panelmanager import PanelManager
 import time
 from database import db_session
 from models import Recording
@@ -26,8 +27,12 @@ class Randomizer:
 		self.recording_track_path = None
 		self.last_command = None
 		self.play_mode = 'loop'
+		self.playing = False
 		self.button = None
+		self.panel_manager = None
 		self.current_shuffle_file = None
+		self.current_recording_saved = False
+		self.recording = False
 		self.led = LED()
 		self.led_thread = threading.Thread(target=self.toggle_led, daemon=True)
 		self.led_toggling = False
@@ -73,7 +78,10 @@ class Randomizer:
 		elif msg == 'led_off;':
 			self.led.off()
 		elif msg == 'recording_done;':
-			self.save_file_data()
+			#self.save_file_data()
+			if self.recording:
+				if self.panel_manager:
+					self.panel_manager.button_pressed('record')
 
 	def get_tempo(self, file):
 		r = 0
@@ -125,49 +133,53 @@ class Randomizer:
 		db_session.commit()
 
 	def start_recording(self):
-		if self.last_command != 'record:start':
-			recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
-			self.recording_track_path = f'/home/patch/recordings/{recording_file}'
-			print(self.recording_track_path)
-			self.send('command stopLoop;\n')
-			self.send(f'recordFile {self.recording_track_path};\n')
-			self.last_command = 'record:start'
-		else:
-			self.send(f'command stopRecording;\n')
-			self.save_file_data()
-			self.last_command = 'record:stop'
+		recording_file = datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '.wav'
+		self.recording_track_path = f'/home/patch/recordings/{recording_file}'
+		print(self.recording_track_path)
+		self.send('command stopLoop;\n')
+		for i in range(10):
+			self.led.on()
+			time.sleep(0.2)
+			self.led.off()
+			time.sleep(0.8)
+		self.led.on()
+		self.send(f'recordFile {self.recording_track_path};\n')
+		self.recording = True
 
-	def play_or_stop_file(self):
-		if self.last_command == None:
-			return
-		elif self.last_command == 'shuffle:play':
-			self.send('command stopLoop;\n')
-			self.last_command = 'shuffle:stop'
-		elif self.last_command == 'shuffle:stop':
-			self.send_last_file()
-			self.last_command = 'shuffle:play'
-		elif self.last_command == 'record:stop' or self.last_command == 'play:stop':
+	def stop_recording(self):
+		self.led.off()
+		self.send(f'command stopRecording;\n')
+		self.current_recording_saved = False
+		self.recording = False
+		#self.save_file_data()
+
+	def play_recording(self):
+		if not self.playing:
 			self.play_last_recording()
-			self.last_command = 'play:start'
-		elif self.last_command == 'play:start':
-			self.send('command stopLoop;\n')
-			self.last_command = 'play:stop'
-		elif self.last_command == 'record:start':
-			self.send(f'command stopRecording;\n')
-			self.last_command = 'record:stop'
-			self.play_or_stop_file()
+			self.playing = True
+		else: 
+			self.send("command stopLoop;\n")
+			self.playing = False
+
+	def play_loop(self):
+		if not self.playing:
+			self.send_last_file()
+			self.playing = True
+		else:
+			self.send("command stopLoop;\n")
+			self.playing = False
+
+	def stop_playback(self):
+		self.send("command stopLoop;\n")
+		self.playing = False
 
 	def save_current_file(self):
 		if self.recording_track_path != None:
-			#self.save_file_data()
+			self.save_file_data()
 			r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
-			r.upload = True
+			#r.upload = True
 			db_session.commit()
-
-	#def save_file_data(self):
-	#	r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
-	#	r.upload = True
-	#	db_session.commit()
+		self.current_recording_saved = True
 
 	def send_current_file(self):
 		if self.recording_track_path == None:
@@ -177,6 +189,9 @@ class Randomizer:
 		r = db_session.query(Recording).filter(Recording.path == self.recording_track_path).first()
 		r.upload = True
 		db_session.commit()
+		#s3manager.upload_files()
+
+	def send_all_files():
 		s3manager.upload_files()
 
 	def erase_current_file(self):
@@ -194,52 +209,34 @@ class Randomizer:
 			return
 		self.send(f'loopFile {self.recording_track_path};\n')
 
-	def pin_cb(self, button_pressed):
-		#self.send(f'command {pin};\n')
-		print(button_pressed)
-		#if(pin == 4):
-		#	self.get_next_file()
-		#if(pin == 5):
-		#	if(self.last_command == 'randomLoop'):
-		#		self.send(f'command stopLoop;\n')
-		#		self.last_command = 'stopLoop'
-		#	elif(self.last_command == 'stopLoop'):
-		#		self.send(f'command playLoop;\n')
-		#		self.last_command = 'playLoop'
-		#	elif(self.last_command == 'playLoop'):
-		#		self.send(f'command stopLoop;\n')
-		#		self.last_command = 'stopLoop'
-		if(button_pressed == 'record'):
-			self.start_recording()
-		elif(button_pressed == 'play'):
-			self.play_or_stop_file()
-		elif(button_pressed == 'save'):
-			self.save_current_file()
-		elif(button_pressed == 'send'):
-			self.send_current_file()
-		elif(button_pressed == 'erase'):
-			self.erase_current_file()
-		elif(button_pressed == 'random'):
+	def run_command(self, command):
+		c = command["command"]
+		print(f'Randomizer: {c}')
+		if c == 'randomFile':
 			self.get_next_file()
+			self.playing = True
+		elif c == 'playLoop':
+			self.play_loop()
+		elif c == 'startRecording':
+			self.start_recording()
+		elif c == 'stopRecording':
+			self.stop_recording()
+		elif c == 'playRecording':
+			self.play_recording()
+		elif c == 'stopPlayback':
+			self.stop_playback()
+		elif c == 'eraseRecording':
+			self.erase_current_file()
+		elif c == 'saveRecording':
+			if not self.current_recording_saved:
+				self.save_current_file()
+		elif c == 'sendRecording':
+			self.send_current_file()
 
-	def shuffle_pressed(self):
-		self.get_next_file()
-
-	def play_pressed(self):
-		self.play_or_stop_file()
-
-	def record_pressed(self):
-		self.start_recording()
-
-	def save_pressed(self):
-		self.save_current_file()
-
-	def send_pressed(self):
-		self.send_current_file()
-
-	def erase_pressed(self):
-		self.erase_current_file()
-
+	def button_pressed(self, button):
+		if self.panel_manager is not None:
+			self.panel_manager.button_pressed(button)
+		
 	def run(self):
 		while 1:
 			data = self.receive_socket.recv(1024)
@@ -247,7 +244,8 @@ class Randomizer:
 			self.parse_message(data.decode().strip())
 
 	def start(self):
-		self.button = Button(self.pin_cb)
+		self.panel_manager = PanelManager(self.run_command)
+		self.button = Button(self.panel_manager.button_pressed)
 		self.button.start_polling()
 		t1 = threading.Thread(target=self.run)
 		t1.start()

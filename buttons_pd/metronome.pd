@@ -1,14 +1,12 @@
-#N canvas 0 118 1920 962 12;
-#X floatatom 893 244 5 0 0 0 - - -;
+#N canvas 0 86 1920 962 12;
+#X floatatom 893 244 5 0 0 0 - - - 0;
 #X obj 714 389 metro;
 #X msg 883 303 tempo \$1 permin;
-#X obj 649 323 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
-1;
-#X obj 725 426 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
--1 -1;
+#X obj 649 323 tgl 15 0 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000 0 1;
+#X obj 725 426 bng 15 250 50 0 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000;
 #X obj 725 471 int 1;
 #X obj 777 474 + 1;
-#X floatatom 736 503 5 0 0 0 - - -;
+#X floatatom 736 503 5 0 0 0 - - - 0;
 #X obj 649 417 sel 1;
 #X msg 649 449 1;
 #X obj 922 593 *~;
@@ -25,7 +23,7 @@
 #X msg 808 599 0;
 #X msg 709 281 1000;
 #X obj 721 239 loadbang;
-#X obj 743 547 sel 10;
+#X obj 772 541 sel 10;
 #X connect 0 0 2 0;
 #X connect 1 0 4 0;
 #X connect 2 0 1 0;
@@ -54,5 +52,5 @@
 #X connect 22 0 1 1;
 #X connect 23 0 22 0;
 #X connect 24 0 3 0;
-#X connect 24 0 21 0;
 #X connect 24 0 20 0;
+#X connect 24 0 21 0;

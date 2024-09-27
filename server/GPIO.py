@@ -70,6 +70,7 @@ class Button:
                     #print(f'hit on {pin}')
                     self.pin_status[pin] = self.pin_status[pin] + 1
                 if (self.pin_status[pin] > 3) and (self.pin_fired[pin] == False):
+                    print(f'Sending {self.pin_names[pin]}')
                     self.pin_cb(self.pin_names[pin])
                     self.pin_fired[pin] = True
             time.sleep(0.06)

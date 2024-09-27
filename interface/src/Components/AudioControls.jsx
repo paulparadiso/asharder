@@ -36,11 +36,11 @@ const AudioControls = props => {
         <Grid item lg={12} sx={{ mt: 10 }}>
             <Paper>
                 <Button variant="outlined" sx={styles} 
-                        onClick={() => sendCommand('randomLoop')}>
+                        onClick={() => sendCommand('random')}>
                     Shuffle
                 </Button>
                 <Button variant="outlined" sx={styles}
-                        onClick={() => sendCommand('playLoop')}>
+                        onClick={() => sendCommand('play')}>
                     Play/Stop
                 </Button>
                 <Button variant="outlined" sx={styles}

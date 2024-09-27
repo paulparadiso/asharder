@@ -63,24 +63,7 @@ def play_audio():
 def command():
 	global randomizer
 	data = request.json
-	if data['command'] == 'randomLoop':
-		#randomizer.send(f'command 4;\n')
-		randomizer.shuffle_pressed()
-	if data['command'] == 'playLoop':
-		#randomizer.send(f'command 5;\n')
-		randomizer.play_pressed()
-	if data['command'] == 'record':
-		#randomizer.send(f'command 15;\n')
-		randomizer.record_pressed()
-	if data['command'] == 'save':
-		#randomizer.send(f'command 22;\n')
-		randomizer.save_pressed()
-	if data['command'] == 'send':
-		#randomizer.send(f'command 23;\n')
-		randomizer.send_pressed()
-	if data['command'] == 'erase':
-		#randomizer.send(f'command 27\n')
-		randomizer.erase_pressed()
+	randomizer.button_pressed(data["command"])
 	return "success"
 
 @app.route('/updatefiles', methods=['POST'])
